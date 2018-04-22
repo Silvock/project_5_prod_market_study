@@ -1,10 +1,9 @@
-
-
 import pandas as pd
 import numpy as np
 import seaborn as sns
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import math as mth
+import matplotlib
 
 def analyse_univarie(data,moncaract='',typecaract=''):
     """Construit une analyse univarie selon le type de variable
@@ -12,11 +11,77 @@ def analyse_univarie(data,moncaract='',typecaract=''):
     - Représentation 
     - Mesure de tendance centrale 
     - Mesure de dispersion 
-    - Mesure de concentration (cas continue)"""
-
+    - Mesure de concentration (cas continue)
     
+    Parameters
+    ----------
+    data : DataFrame
+        The first parameter.
+    moncaract : str
+        The second parameter : Nom de la colonne (variable) à traiter.
+    typecaract :
+        The third parameter : Type de variable.
+    Returns
+    -------
+        Analyse univariée
+    """
+
+    data = data
+    moncaract = moncaract
+    typecaract = typecaract
     if typecaract=='qtedisc': # Variable quantitative discrète
-        #Construction du tableau de distribution
+        analyse_vqtedisc(data,moncaract,typecaract)
+    elif typecaract=='qtecont': # Variable quantitative continue
+        analyse_vqtecont(data,moncaract,typecaract)
+    elif typecaract=='qual':
+        analyse_qual(data,moncaract,typecaract)
+    else:
+        print("""Erreur : Insérer un type de variable parmi les choix suivants :
+              - Variable quantitative discrète 'qtedisc' 
+              - Variable quantitative continue 'qtecont' 
+              - Variable quantitative 'qtequal'""")
+def analyse_bivariee(data,nomcaract1='',typecaract1='',nomcaract2='',typecaract2=''):
+    """Construit une analyse univarie selon le type de variable
+    - Distribution empirique 
+    - Représentation 
+    - Mesure de tendance centrale 
+    - Mesure de dispersion 
+    - Mesure de concentration (cas continue)
+    
+    Parameters
+    ----------
+    data : DataFrame
+        The first parameter.
+    moncaract1 : str
+        The second parameter : Nom de la colonne (variable) à traiter.
+    moncaract2 : str
+        The second parameter : Nom de la colonne (variable) à traiter.
+    typecaract1 :
+        The third parameter : Type de la première variable.
+    typecaract2 :
+        The third parameter : Type de la seconde variable.
+    Returns
+    -------
+        Analyse bivariée
+    """
+    data = data
+    moncaract1 = moncaract1
+    moncaract2 = moncaract2
+    typecaract1 = typecaract1
+    typecaract2 = typecaract2
+    if typecaract1 == 'qte' and typecaract2 == 'qte':
+        analyse_qte_qte(data,nomcaract1,typecaract1,nomcaract2,typecaract2)
+        
+    elif typecaract1 == 'qual' and typecaract2 =='qual':
+        analyse_qual_qual(data,nomcaract1,typecaract1,nomcaract2,typecaract2)
+    elif (typecaract1 == 'qte' and typecaract2 == 'qual') or (typecaract1 == 'qual' and typecaract2 == 'qte'):
+        analyse_qte_qual(data,nomcaract1,typecaract1,nomcaract2,typecaract2)
+    else:
+        print("""Qualitative = 'qual'
+        Quantitative = 'qte'""")
+        
+def analyse_vqtedisc(data,moncaract,typecaract):
+ #Construction du tableau de distribution
         effectifs = data[moncaract].value_counts()
 
         modalites = effectifs.index # l'index de effectifs contient les modalités
@@ -126,8 +191,8 @@ def analyse_univarie(data,moncaract='',typecaract=''):
             print(mesure_dispersion)
             return tab
         
-    elif typecaract=='qtecont': # Variable quantitative continue
-        #Construction du tableau de distribution
+def analyse_vqtecont(data,moncaract,typecaract):
+#Construction du tableau de distribution
         
         effectifs = data[moncaract].value_counts()
 
@@ -293,8 +358,9 @@ def analyse_univarie(data,moncaract='',typecaract=''):
             print(mesure_dispersion)
             
             return tab
-    elif typecaract=='qual':
-        #Construction du tableau de distribution
+        
+def analyse_qual(data,moncaract,typecaract):
+#Construction du tableau de distribution
         effectifs = data[moncaract].value_counts()
 
         modalites = effectifs.index # l'index de effectifs contient les modalités
@@ -379,14 +445,8 @@ def analyse_univarie(data,moncaract='',typecaract=''):
             print(mesure_dispersion)
             return tab
         
-    else:
-        print("""Erreur : Insérer un type de variable parmi les choix suivants :
-              - Variable quantitative discrète 'qtedisc' 
-              - Variable quantitative continue 'qtecont' 
-              - Variable quantitative 'qtequal'""")
-def analyse_bivariee(data,nomcaract1='',typecaract1='',nomcaract2='',typecaract2=''):
-    if typecaract1 == 'qte' and typecaract2 == 'qte':
-        
+def analyse_qte_qte(data,nomcaract1,typecaract1,nomcaract2,typecaract2):
+       
         abcisses = nomcaract1
         ordonnes = nomcaract2
         question = str(input('Voulez-vous afficher les couleurs ? (y/n)'))
@@ -437,72 +497,8 @@ def analyse_bivariee(data,nomcaract1='',typecaract1='',nomcaract2='',typecaract2
                 print('On retient H1 : Les variables sont corrélées')
             else:
                 print('On retient H0 : Les variables ne sont pas corrélées')
-                
-    elif typecaract1 == 'qual' and typecaract2 =='qual':
-        
-        X = nomcaract1
-
-        Y = nomcaract2
-
-
-        c = data[[X,Y]].pivot_table(index=X,columns=Y,aggfunc=len)
-
-        cont = c.copy()
-
-
-        tx = data[X].value_counts()
-
-        ty = data[Y].value_counts()
-
-
-        cont.loc[:,"Total"] = tx
-
-        cont.loc["total",:] = ty
-
-        cont.loc["total","Total"] = len(data)
-
-
-
-        tx = pd.DataFrame(tx)
-
-
-        ty = pd.DataFrame(ty)
-
-        tx.columns = ["foo"]
-
-        ty.columns = ["foo"]
-
-        n = len(data)
-
-        indep = (tx.dot(ty.T) / n)
-
-
-        c = c.fillna(0) # on remplace les valeurs nulles par des 0
-
-        mesure = (c-indep)**2/indep
-
-        xi_n = mesure.sum().sum()
-
-        d = (mesure/xi_n)
-        fig = plt.figure(figsize=(20,20))
-        plot = sns.heatmap(d, annot=c)
-        titre = plot.set_title('Tableau de contingence coloré')
-        plt.show(plot)
-        
-        save_image = str(input("Sauvegarder l'image ? (y/n) :"))
-        if save_image =='y': 
-            image= fig.get_figure()
-            image.savefig('Images/{}'.format(titre))
-        else:
-            print("Pas de sauvegarde")
-        
-        print('Table des coefficients de corrélation :')
-        print(xi_n)
-
-        
-        
-    elif (typecaract1 == 'qte' and typecaract2 == 'qual') or (typecaract1 == 'qual' and typecaract2 == 'qte'):
-        # Représentation
+def analyse_qte_qual(data,nomcaract1,typecaract1,nomcaract2,typecaract2):
+ # Représentation
         fig= plt.figure(figsize=(20,20))
         abcisses = nomcaract1
         ordonnes = str(input('Choisir variable de mesure (qte) :'))
@@ -565,7 +561,64 @@ def analyse_bivariee(data,nomcaract1='',typecaract1='',nomcaract2='',typecaract2
                 #print('On retient H1 : Les variables sont corrélées')
             #else:
                 #print('On retient H0 : Les variables ne sont pas corrélées')
-    else:
-        print("""Qualitative = 'qual'
-        Quantitative = 'qte'""")
+    
+def analyse_qual_qual(data,nomcaract1,typecaract1,nomcaract2,typecaract2):
+      
+        X = nomcaract1
+
+        Y = nomcaract2
+
+
+        c = data[[X,Y]].pivot_table(index=X,columns=Y,aggfunc=len)
+
+        cont = c.copy()
+
+
+        tx = data[X].value_counts()
+
+        ty = data[Y].value_counts()
+
+
+        cont.loc[:,"Total"] = tx
+
+        cont.loc["total",:] = ty
+
+        cont.loc["total","Total"] = len(data)
+
+
+
+        tx = pd.DataFrame(tx)
+
+
+        ty = pd.DataFrame(ty)
+
+        tx.columns = ["foo"]
+
+        ty.columns = ["foo"]
+
+        n = len(data)
+
+        indep = (tx.dot(ty.T) / n)
+
+
+        c = c.fillna(0) # on remplace les valeurs nulles par des 0
+
+        mesure = (c-indep)**2/indep
+
+        xi_n = mesure.sum().sum()
+
+        d = (mesure/xi_n)
+        fig = plt.figure(figsize=(20,20))
+        plot = sns.heatmap(d, annot=c)
+        titre = plot.set_title('Tableau de contingence coloré')
+        plt.show(plot)
         
+        save_image = str(input("Sauvegarder l'image ? (y/n) :"))
+        if save_image =='y': 
+            image= fig.get_figure()
+            image.savefig('Images/{}'.format(titre))
+        else:
+            print("Pas de sauvegarde")
+        
+        print('Table des coefficients de corrélation :')
+        print(xi_n)
