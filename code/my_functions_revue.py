@@ -4,6 +4,72 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import math as mth
 import matplotlib
+import scipy.stats as st
+
+
+cmaps = [('Perceptually Uniform Sequential', [
+            'viridis', 'plasma', 'inferno', 'magma']),
+         ('Sequential', [
+            'Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+            'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
+            'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn']),
+         ('Sequential (2)', [
+            'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
+            'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
+            'hot', 'afmhot', 'gist_heat', 'copper']),
+         ('Diverging', [
+            'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
+            'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']),
+         ('Qualitative', [
+            'Pastel1', 'Pastel2', 'Paired', 'Accent',
+            'Dark2', 'Set1', 'Set2', 'Set3',
+            'tab10', 'tab20', 'tab20b', 'tab20c']),
+         ('Miscellaneous', [
+            'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
+            'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg', 'hsv',
+            'gist_rainbow', 'rainbow', 'jet', 'nipy_spectral', 'gist_ncar'])]
+
+def verif_presence_nan_in_df(data, namedf=''):
+    """Determine si le dataframe contient des valeurs nulles
+    Parameters
+    ----------
+    data : DataFrame
+        The first parameter.
+    namedf : str
+        The second parameter.
+
+    Returns
+    -------
+    bool
+        True if successful, False otherwise.
+    
+    """
+
+    if data.isnull().values.any() == False:
+        print("Il n'y a pas de valeur manquante dans {}".format(namedf))
+    else:
+        print('Présence de valeurs manquante dans {}'.format(namedf))
+
+def verif_doublon(data, namedf=''):
+    """Vérifie la présence de doublons
+    Parameters
+    ----------
+    data : DataFrame
+        The first parameter.
+    namedf : str
+        The second parameter.
+
+    Returns
+    -------
+    bool
+        True if successful, False otherwise.
+    
+    """
+    data_ss_doublon = data.drop_duplicates()
+    if data.shape == data_ss_doublon.shape:
+        print("Absence de doublon, il n'y a pas de retraitement à faire pour {}".format(namedf))
+    else:
+        print('Suppression des doublons ?')
 
 def analyse_univarie(data,moncaract='',typecaract=''):
     """Construit une analyse univarie selon le type de variable
@@ -41,7 +107,7 @@ def analyse_univarie(data,moncaract='',typecaract=''):
               - Variable quantitative continue 'qtecont' 
               - Variable quantitative 'qtequal'""")
 def analyse_bivariee(data,nomcaract1='',typecaract1='',nomcaract2='',typecaract2=''):
-    """Construit une analyse univarie selon le type de variable
+    """Construit une analyse bivarie selon le type de variable
     - Distribution empirique 
     - Représentation 
     - Mesure de tendance centrale 
@@ -64,11 +130,7 @@ def analyse_bivariee(data,nomcaract1='',typecaract1='',nomcaract2='',typecaract2
     -------
         Analyse bivariée
     """
-    data = data
-    moncaract1 = moncaract1
-    moncaract2 = moncaract2
-    typecaract1 = typecaract1
-    typecaract2 = typecaract2
+    data=data
     if typecaract1 == 'qte' and typecaract2 == 'qte':
         analyse_qte_qte(data,nomcaract1,typecaract1,nomcaract2,typecaract2)
         
@@ -144,12 +206,13 @@ def analyse_vqtedisc(data,moncaract,typecaract):
             save_image = str(input("Sauvegarder l'image ? (y/n) :"))
             if save_image =='y': 
                 image= tab_plot.get_figure()
-                image.savefig('Images/{}'.format(titre))
+                chemin = str(input('Indiquer le chemin du dossier'))
+                image.savefig('{}/{}'.format(chemin,titre))
             else:
                 print("Pas de sauvegarde")
             print(mesure_tendance_centrale)
             print(mesure_dispersion)
-            return tab
+            print(tab)
         else:
             abcisses = moncaract
             question = str(input('Voulez-vous afficher les couleurs ? (y/n)'))
@@ -184,12 +247,13 @@ def analyse_vqtedisc(data,moncaract,typecaract):
             save_image = str(input("Sauvegarder l'image ? (y/n) :"))
             if save_image == 'y': 
                 image= tab_plot.get_figure()
-                image.savefig('Images/{}'.format(titre))
+                chemin = str(input('Indiquer le chemin du dossier'))
+                image.savefig('{}/{}'.format(chemin,titre))
             else:
                 print("Pas de sauvegarde")
             print(mesure_tendance_centrale)
             print(mesure_dispersion)
-            return tab
+            print(tab)
         
 def analyse_vqtecont(data,moncaract,typecaract):
 #Construction du tableau de distribution
@@ -215,7 +279,7 @@ def analyse_vqtecont(data,moncaract,typecaract):
         mesure_tendance_centrale = """Variable {} :
         - Moyenne = {}
         - Médiane = {}
-        - Mode = {}""".format(moncaract,moyenne,mediane,mode)
+        """.format(moncaract,moyenne,mediane,mode)
         
         variance = data[moncaract].var(ddof=0)
         ecart_type = data[moncaract].std(ddof=0)
@@ -264,7 +328,9 @@ def analyse_vqtecont(data,moncaract,typecaract):
             save_image_lorenz = str(input("Sauvegarder la courbe de lorenz ? (y/n) :"))
             if save_image_lorenz =='y': 
                 image_lorenz= plot_lorenz.get_figure()
-                image_lorenz.savefig('Images/{}'.format(titre_lorenz))
+                chemin = str(input('Indiquer le chemin du dossier'))
+                image.savefig('{}/{}'.format(chemin,titre))
+               
             print("L'indice de Gini est égal à {}".format(gini))
         else:
             print("Mesure de concentration non affichée")
@@ -301,7 +367,8 @@ def analyse_vqtecont(data,moncaract,typecaract):
             save_image = str(input("Sauvegarder l'image ? (y/n) :"))
             if save_image == 'y': 
                 image= plot_data.get_figure()
-                image.savefig('Images/{}'.format(titre))
+                chemin = str(input('Indiquer le chemin du dossier'))
+                image.savefig('{}/{}'.format(chemin,titre))
             else:
                 print("Pas de sauvegarde")
             upper_quartile = np.percentile(data[moncaract], 75)
@@ -315,7 +382,7 @@ def analyse_vqtecont(data,moncaract,typecaract):
             print(mesure_tendance_centrale)
             print(mesure_dispersion)
             
-            return tab
+            print(tab)
         
         if representation == 'hist':
             abcisses = moncaract
@@ -350,14 +417,15 @@ def analyse_vqtecont(data,moncaract,typecaract):
             save_image = str(input("Sauvegarder l'image ? (y/n) :"))
             if save_image == 'y': 
                 image= plot_data.get_figure()
-                image.savefig('Images/{}'.format(titre))
+                chemin = str(input('Indiquer le chemin du dossier'))
+                image.savefig('{}/{}'.format(chemin,titre))
             else:
                 print("Pas de sauvegarde")
             
             print(mesure_tendance_centrale)
             print(mesure_dispersion)
             
-            return tab
+            print(tab)
         
 def analyse_qual(data,moncaract,typecaract):
 #Construction du tableau de distribution
@@ -369,6 +437,15 @@ def analyse_qual(data,moncaract,typecaract):
         tab["n"] = effectifs.values
 
         tab["f"] = tab["n"] / len(data) # len(data) renvoie la taille de l'échantillon
+
+        
+        mode = data[moncaract].mode()
+        
+        mesure_tendance_centrale = """Variable {} :
+        
+        - Mode = {}""".format(moncaract,mode)
+        
+        
 
         #Représentation
         representation = str(input("Choisir représentation : Camenbert ('camenb') ou Tuyau d'orgue ('tuyau') :"))
@@ -400,12 +477,13 @@ def analyse_qual(data,moncaract,typecaract):
             save_image = str(input("Sauvegarder l'image ? (y/n) :"))
             if save_image =='y': 
                 image= tab_plot.get_figure()
-                image.savefig('Images/{}'.format(titre))
+                chemin = str(input('Indiquer le chemin du dossier'))
+                image.savefig('{}/{}'.format(chemin,titre))
             else:
                 print("Pas de sauvegarde")
             print(mesure_tendance_centrale)
             print(mesure_dispersion)
-            return tab
+            print(tab)
         elif representation == 'tuyau':
             abcisses = moncaract
             question = str(input('Voulez-vous afficher les couleurs ? (y/n)'))
@@ -438,12 +516,13 @@ def analyse_qual(data,moncaract,typecaract):
             save_image = str(input("Sauvegarder l'image ? (y/n) :"))
             if save_image == 'y': 
                 image= tab_plot.get_figure()
-                image.savefig('Images/{}'.format(titre))
+                chemin = str(input('Indiquer le chemin du dossier'))
+                image.savefig('{}/{}'.format(chemin,titre))
             else:
                 print("Pas de sauvegarde")
             print(mesure_tendance_centrale)
             print(mesure_dispersion)
-            return tab
+            print(tab)
         
 def analyse_qte_qte(data,nomcaract1,typecaract1,nomcaract2,typecaract2):
        
@@ -478,25 +557,30 @@ def analyse_qte_qte(data,nomcaract1,typecaract1,nomcaract2,typecaract2):
         plt.show(data_plot)
         save_image = str(input("Sauvegarder l'image ? (y/n) :"))
         if save_image =='y': 
-            image= tab_plot.get_figure()
-            image.savefig('Images/{}'.format(titre))
+            image= data_plot.get_figure()
+            chemin = str(input('Indiquer le chemin du dossier'))
+            image.savefig('{}/{}'.format(chemin,titre))
         else:
             print("Pas de sauvegarde")
         
         # Analyse de la corrélation
         coef_corr_pearson = round(st.pearsonr(data[nomcaract1],data[nomcaract2])[0],2)
-        print("Le coeficient de corrélation (Pearson) est égal à {}".format(coef_corr_pearson))
-        if coef_corr_pearson < 0.40:
-            print('Les variables sont pas corrélées')
+        print("Le coefficient de corrélation (Pearson) est égal à {}".format(coef_corr_pearson))
+        if coef_corr_pearson <= 0 and coef_corr_pearson > -0.40:
+            print('Les variables ne sont pas négativement corrélées car {} est supérieur à -0,40'.format(coef_corr_pearson))
+        elif coef_corr_pearson < -0.60:
+            print('Les variables sont négativement corrélées car {} est inférieur à -0,60'.format(coef_corr_pearson))
+        elif coef_corr_pearson >= 0 and coef_corr_pearson < 0.40:
+            print('Les variables ne sont pas positivement corrélées car {} est inférieur à 0,40'.format(coef_corr_pearson))
         elif coef_corr_pearson > 0.60:
-            print('Les variables sont corrélées')
+            print('Les variables sont corrélées positivement car {} est supérieur à 0,60'.format(coef_corr_pearson))
         else:
             seuil_confiance = float(input('Choisir un seuil de confiance 0.1 ou 0.05 :'))
             p_value = round(st.pearsonr(data[nomcaract1],data[nomcaract2])[1],2)
             if p_value < seuil_confiance:
-                print('On retient H1 : Les variables sont corrélées')
+                print('On retient H1 : Les variables sont corrélées car {} (p-valeur) est inférieure à {} (seuil de confiance)'.format(p_value,seuil_confiance))
             else:
-                print('On retient H0 : Les variables ne sont pas corrélées')
+                print('On retient H0 : Les variables ne sont pas corrélées car {} (p-valeur) est supérieure à {} (seuil de confiance)'.format(p_value,seuil_confiance))
 def analyse_qte_qual(data,nomcaract1,typecaract1,nomcaract2,typecaract2):
  # Représentation
         fig= plt.figure(figsize=(20,20))
@@ -532,7 +616,8 @@ def analyse_qte_qual(data,nomcaract1,typecaract1,nomcaract2,typecaract2):
         save_image = str(input("Sauvegarder l'image ? (y/n) :"))
         if save_image =='y': 
             image= fig.get_figure()
-            image.savefig('Images/{}'.format(titre))
+            chemin = str(input('Indiquer le chemin du dossier'))
+            image.savefig('{}/{}'.format(chemin,titre))
         else:
             print("Pas de sauvegarde")
         
@@ -549,18 +634,22 @@ def analyse_qte_qual(data,nomcaract1,typecaract1,nomcaract2,typecaract2):
         SCT = sum([(yj-moyenne_y)**2 for yj in y])
         SCE = sum([c['ni']*(c['moyenne_classe']-moyenne_y)**2 for c in classes])
         eta_squared= SCE/SCT
-        print("Le coeficient de corrélation (eta-squared) est égal à {}".format(eta_squared))
-        #if coef_corr_pearson < 0.40:
-            #print('Les variables sont pas corrélées')
-        #elif coef_corr_pearson > 0.60:
-            #print('Les variables sont corrélées')
-        #else:
-            #seuil_confiance = float(input('Choisir un seuil de confiance 0.1 ou 0.05 :'))
-            #p_value = round(st.pearsonr(data[nomcaract1],data[nomcaract2])[1],2)
-            #if p_value < seuil_confiance:
-                #print('On retient H1 : Les variables sont corrélées')
-            #else:
-                #print('On retient H0 : Les variables ne sont pas corrélées')
+        print("Le coefficient de corrélation (eta-squared) est égal à {}".format(eta_squared))
+        if eta_squared <=0 and eta_squared > -0.40:
+            print('Les variables ne sont pas négativement corrélées car {} est supérieur à -0,40'.format(eta_squared))
+        elif eta_squared < -0.60:
+            print('Les variables sont négativement corrélées car {} est inférieur à -0,60'.format(eta_squared))
+        elif eta_squared >= 0 and eta_squared < 0.40:
+            print('Les variables ne sont pas positivement corrélées car {} est inférieur à 0,40'.format(eta_squared))
+        elif eta_squared > 0.60:
+            print('Les variables sont positivement corrélées car {} est supérieur à 0,60'.format(eta_squared))
+        else:
+            seuil_confiance = float(input('Choisir un seuil de confiance 0.1 ou 0.05 :'))
+            p_value = round(st.pearsonr(data[nomcaract1],data[nomcaract2])[1],2)
+            if p_value < seuil_confiance:
+                print('On retient H1 : Les variables sont corrélées car {} (p-valeur) est inférieure à {} (seuil de confiance)'.format(p_value,seuil_confiance))
+            else:
+                print('On retient H0 : Les variables ne sont pas corrélées car {} (p-valeur) est supérieure à {} (seuil de confiance)'.format(p_value,seuil_confiance))
     
 def analyse_qual_qual(data,nomcaract1,typecaract1,nomcaract2,typecaract2):
       
@@ -616,7 +705,8 @@ def analyse_qual_qual(data,nomcaract1,typecaract1,nomcaract2,typecaract2):
         save_image = str(input("Sauvegarder l'image ? (y/n) :"))
         if save_image =='y': 
             image= fig.get_figure()
-            image.savefig('Images/{}'.format(titre))
+            chemin = str(input('Indiquer le chemin du dossier'))
+            image.savefig('{}/{}'.format(chemin,titre))
         else:
             print("Pas de sauvegarde")
         
